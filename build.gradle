@@ -48,9 +48,54 @@ project(":desktop") {
     }
 }
 
+// Configuration Jacoco pour tous les projets
+allprojects {
+    apply plugin: 'jacoco'
+}
+
 project(":core") {
     apply plugin: "java-library"
-    apply plugin: 'jacoco'
+    
+    // Configuration de test
+    test {
+        useJUnitPlatform()
+        testLogging {
+            events "passed", "skipped", "failed"
+        }
+        finalizedBy jacocoTestReport
+    }
+    
+    // Configuration Jacoco
+    jacoco {
+        toolVersion = jacocoVersion
+    }
+    
+    jacocoTestReport {
+        dependsOn test
+        
+        reports {
+            xml.required = true
+            html.required = true
+            html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+        }
+        
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                    '**/config/**',
+                    '**/*Test*.*',
+                    '**/BuildConfig.*',
+                    '**/R.class',
+                    '**/R$*.class',
+                    '**/Manifest*.*',
+                    '**/*$ViewBinder*.*',
+                    '**/*_MembersInjector*.*',
+                    '**/*_Factory*.*',
+                    '**/*_Impl*.*'
+                ])
+            }))
+        }
+    }
 
     configurations {
         testCompileOnly
