@@ -1,0 +1,29 @@
+apply plugin: "java-library"
+apply plugin: 'application'
+
+mainClassName = 'com.mariogame.desktop.DesktopLauncher'
+
+sourceCompatibility = 1.8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+sourceSets.main.java.srcDirs = [ "src/" ]
+
+dependencies {
+    implementation project(":core")
+    
+    // LibGDX
+    api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    api "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+}
+
+// Configuration pour le JAR exécutable
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.mariogame.desktop.DesktopLauncher'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = 'exclude'
+}

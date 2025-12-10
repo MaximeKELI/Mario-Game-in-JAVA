@@ -7,8 +7,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 
-import static com.mariogame.core.GameManager.*;
-
 public class Player {
     // Constantes de jeu
     private static final float SPEED = 2.5f;
@@ -18,8 +16,8 @@ public class Player {
     
     // États du joueur
     public enum State { IDLE, RUNNING, JUMPING, FALLING, CROUCHING }
-    private State currentState;
-    private State previousState;
+    private State currentState = State.IDLE;
+    private State previousState = State.IDLE;
     private boolean facingRight = true;
     private boolean isJumping = false;
     private boolean isCrouching = false;
@@ -48,6 +46,22 @@ public class Player {
     
     // Sons
     private Sound jumpSound;
+    private Sound coinSound;
+    private Sound powerupSound;
+    private Sound deathSound;
+    
+    // Interface pour gérer la mort du joueur
+    public interface OnPlayerDeath {
+        void onDeath();
+    }
+    private OnPlayerDeath onPlayerDeath;
+    
+    // Constructeur
+    public Player(World world, float x, float y) {
+        createPhysics(world, x, y);
+        loadAnimations();
+        loadSounds();
+    }
     private Sound coinSound;
     private Sound hurtSound;
     
