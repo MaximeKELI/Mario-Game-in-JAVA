@@ -1,5 +1,7 @@
 package com.mariogame.core;
 
+import static com.mariogame.core.GameConfig.*;
+
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.*;
@@ -11,23 +13,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class MarioGame extends ApplicationAdapter implements InputProcessor {
-    // Constantes du jeu
-    public static final float PPM = 100f; // Pixels Per Meter
-    public static final float V_WIDTH = 16f; // Largeur virtuelle en mètres
-    public static final float V_HEIGHT = 9f; // Hauteur virtuelle en mètres
-    
-    // Bits de collision
-    public static final short NOTHING_BIT = 0;
-    public static final short GROUND_BIT = 1;
-    public static final short PLAYER_BIT = 2;
-    public static final short BRICK_BIT = 4;
-    public static final short COIN_BIT = 8;
-    public static final short DESTROYED_BIT = 16;
-    public static final short OBJECT_BIT = 32;
-    public static final short ENEMY_BIT = 64;
-    public static final short ENEMY_HEAD_BIT = 128;
-    public static final short ITEM_BIT = 256;
-    public static final short PLAYER_HEAD_BIT = 512;
+    // Configuration du jeu
 
     // Variables graphiques
     private OrthographicCamera gamecam;
@@ -65,9 +51,16 @@ public class MarioGame extends ApplicationAdapter implements InputProcessor {
         // Initialisation du batch
         batch = new SpriteBatch();
         
-        // Initialisation de Box2D
-        world = new World(new Vector2(0, -30f), true);
-        b2dr = new Box2DDebugRenderer();
+        // Initialisation de Box2D avec la configuration
+        world = new World(new Vector2(0, World.GRAVITY), true);
+        b2dr = new Box2DDebugRenderer(
+            true,  // dessiner les formes
+            true,  // dessiner les joints
+            true,  // dessiner les aabbs
+            true,  // dessiner les points de masse
+            false, // dessiner les articulations
+            true   // dessiner les centres de masse
+        );
         
         // Initialisation du HUD
         hud = new Hud(batch);
@@ -89,34 +82,59 @@ public class MarioGame extends ApplicationAdapter implements InputProcessor {
         // Création du sol principal
         createGround(0, 0, levelWidth, 1);
         
-        // Ajout de quelques plateformes
-        createPlatform(5, 3, 3, 0.5f);
-        createPlatform(12, 5, 2, 0.5f);
-        createPlatform(20, 7, 4, 0.5f);
-        createPlatform(30, 4, 3, 0.5f);
+        // Ajout de plateformes de test avec la configuration
+        float[] platforms = {
+            // x, y, width, height
+            5, 3, 3, 0.5f,
+            12, 5, 2, 0.5f,
+            20, 7, 4, 0.5f,
+            30, 4, 3, 0.5f
+        };
         
-        // Ajout de quelques briques avec pièces
+        for (int i = 0; i < platforms.length; i += 4) {
+            createPlatform(
+                platforms[i], 
+                platforms[i + 1], 
+                platforms[i + 2], 
+                platforms[i + 3]
+            );
+        }
+        
+        // Ajout de briques avec pièces
         for (int i = 0; i < 5; i++) {
             createBrick(8 + i * 2, 6);
         }
     }
     
     private void createGround(float x, float y, float width, float height) {
+        // Création du corps statique
         BodyDef bdef = new BodyDef();
         bdef.position.set(x + width/2, y + height/2);
         bdef.type = BodyType.StaticBody;
         
-        Body body = world.createBody(bdef);
-        
+        // Création de la forme de collision
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(width/2, height/2);
         
+        // Configuration du fixture
         FixtureDef fdef = new FixtureDef();
         fdef.shape = shape;
-        fdef.filter.categoryBits = GROUND_BIT;
-        fdef.filter.maskBits = PLAYER_BIT | ENEMY_BIT | OBJECT_BIT;
+        fdef.friction = Player.FRICTION;
+        fdef.restitution = Player.RESTITUTION;
+        fdef.density = Player.DENSITY;
         
-        body.createFixture(fdef).setUserData("ground");
+        // Configuration des filtres de collision
+        Filter filter = new Filter();
+        filter.categoryBits = CollisionLayers.GROUND_BIT;
+        filter.maskBits = CollisionLayers.GROUND_MASK;
+        
+        // Création du corps et application du fixture
+        Body body = world.createBody(bdef);
+        Fixture fixture = body.createFixture(fdef);
+        fixture.setFilterData(filter);
+        fixture.setUserData("ground");
+        
+        // Nettoyage
         shape.dispose();
     }
     
@@ -125,21 +143,34 @@ public class MarioGame extends ApplicationAdapter implements InputProcessor {
     }
     
     private void createBrick(float x, float y) {
+        // Création du corps statique pour la brique
         BodyDef bdef = new BodyDef();
         bdef.position.set(x, y);
         bdef.type = BodyType.StaticBody;
         
-        Body body = world.createBody(bdef);
-        
+        // Création de la forme de collision
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(0.5f, 0.5f);
         
+        // Configuration du fixture
         FixtureDef fdef = new FixtureDef();
         fdef.shape = shape;
-        fdef.filter.categoryBits = BRICK_BIT;
-        fdef.filter.maskBits = PLAYER_BIT | ENEMY_BIT;
+        fdef.friction = Player.FRICTION;
+        fdef.restitution = Player.RESTITUTION;
+        fdef.density = Player.DENSITY;
         
-        body.createFixture(fdef).setUserData("brick");
+        // Configuration des filtres de collision
+        Filter filter = new Filter();
+        filter.categoryBits = CollisionLayers.BRICK_BIT;
+        filter.maskBits = CollisionLayers.PLAYER_BIT | CollisionLayers.ENEMY_BIT;
+        
+        // Création du corps et application du fixture
+        Body body = world.createBody(bdef);
+        Fixture fixture = body.createFixture(fdef);
+        fixture.setFilterData(filter);
+        fixture.setUserData("brick");
+        
+        // Nettoyage
         shape.dispose();
     }
     
@@ -149,9 +180,13 @@ public class MarioGame extends ApplicationAdapter implements InputProcessor {
         Gdx.gl.glClearColor(0.53f, 0.81f, 0.92f, 1); // Ciel bleu clair
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
-        // Mise à jour du monde physique
+        // Mise à jour du monde physique avec la configuration
         float deltaTime = Math.min(Gdx.graphics.getDeltaTime(), 0.25f);
-        world.step(1/60f, 6, 2);
+        world.step(
+            World.TIME_STEP, 
+            World.VELOCITY_ITERATIONS, 
+            World.POSITION_ITERATIONS
+        );
         
         // Gestion des entrées
         handleInput(deltaTime);
@@ -188,48 +223,67 @@ public class MarioGame extends ApplicationAdapter implements InputProcessor {
     }
     
     private void handleInput(float deltaTime) {
-        // Gestion des déplacements
+        if (player == null) return;
+        
+        // Gestion des déplacements horizontaux
+        float targetVelocityX = 0;
+        
         if (moveLeft) {
-            player.moveLeft();
-            if (runPressed) {
-                // Le joueur court
-                player.runLeft();
-            }
+            targetVelocityX = -Player.MAX_SPEED;
+            player.setFacingRight(false);
         } else if (moveRight) {
-            player.moveRight();
-            if (runPressed) {
-                // Le joueur court
-                player.runRight();
-            }
-        } else {
-            player.stop();
+            targetVelocityX = Player.MAX_SPEED;
+            player.setFacingRight(true);
         }
+        
+        // Application de la vitesse avec accélération et décélération
+        Vector2 velocity = player.getBody().getLinearVelocity();
+        float velocityChangeX = targetVelocityX - velocity.x;
+        float impulseX = player.getBody().getMass() * velocityChangeX * Player.ACCELERATION * deltaTime;
+        
+        // Limiter l'impulsion pour éviter des accélérations trop brutales
+        impulseX = Math.signum(impulseX) * Math.min(Math.abs(impulseX), Math.abs(velocityChangeX) * player.getBody().getMass());
+        
+        player.getBody().applyLinearImpulse(
+            new Vector2(impulseX, 0), 
+            player.getBody().getWorldCenter(), 
+            true
+        );
         
         // Gestion du saut
         if (jumpPressed) {
             player.jump();
         }
+        
+        // Gestion de l'accroupissement
+        player.setCrouching(isCrouching);
     }
     
     private void updateCamera(float deltaTime) {
-        // Suivi du joueur avec la caméra
-        float targetX = player.getBody().getPosition().x;
-        float targetY = player.getBody().getPosition().y;
+        if (player == null) return;
         
-        // Limiter la caméra aux bords du niveau
-        targetX = Math.max(targetX, gamePort.getWorldWidth() / 2);
-        targetX = Math.min(targetX, levelWidth - gamePort.getWorldWidth() / 2);
+        // Position cible de la caméra (centrée sur le joueur)
+        Vector2 target = new Vector2(
+            player.getBody().getPosition().x,
+            player.getBody().getPosition().y
+        );
         
-        // Centrer verticalement le joueur dans la moitié inférieure de l'écran
-        targetY = Math.max(targetY, gamePort.getWorldHeight() / 3);
-        targetY = Math.min(targetY, levelHeight - gamePort.getWorldHeight() / 2);
+        // Limites de la caméra
+        float viewportWidth = gamePort.getWorldWidth() * gamecam.zoom;
+        float viewportHeight = gamePort.getWorldHeight() * gamecam.zoom;
+        
+        // Limiter la position X de la caméra
+        target.x = Math.max(viewportWidth / 2, Math.min(levelWidth - viewportWidth / 2, target.x));
+        
+        // Centrer verticalement dans la moitié inférieure de l'écran
+        target.y = Math.max(viewportHeight / 3, Math.min(levelHeight - viewportHeight / 2, target.y));
         
         // Lissage du mouvement de la caméra
-        float lerp = 0.1f;
-        float newX = gamecam.position.x + (targetX - gamecam.position.x) * lerp;
-        float newY = gamecam.position.y + (targetY - gamecam.position.y) * lerp;
+        Vector2 position = new Vector2(gamecam.position.x, gamecam.position.y);
+        position.lerp(target, Camera.FOLLOW_SPEED * deltaTime * 60f);
         
-        gamecam.position.set(newX, newY, 0);
+        // Mise à jour de la position de la caméra
+        gamecam.position.set(position.x, position.y, 0);
         gamecam.update();
     }
     
@@ -293,7 +347,19 @@ public class MarioGame extends ApplicationAdapter implements InputProcessor {
     
     @Override
     public void resize(int width, int height) {
-        gamePort.update(width, height);
+        // Mise à jour de la vue avec le nouveau format d'écran
+        gamePort.update(width, height, true);
+        
+        // Ajuster le zoom de la caméra si nécessaire
+        float aspectRatio = (float)width / (float)height;
+        float targetWidth = World.V_WIDTH;
+        float targetHeight = targetWidth / aspectRatio;
+        
+        gamecam.viewportWidth = targetWidth;
+        gamecam.viewportHeight = targetHeight;
+        
+        // Forcer la mise à jour de la caméra
+        gamecam.update();
     }
     
     @Override
@@ -309,51 +375,29 @@ public class MarioGame extends ApplicationAdapter implements InputProcessor {
     // Méthodes de l'interface InputProcessor
     @Override
     public boolean keyDown(int keycode) {
-        switch (keycode) {
-            case Input.Keys.LEFT:
-                moveLeft = true;
-                break;
-            case Input.Keys.RIGHT:
-                moveRight = true;
-                break;
-            case Input.Keys.UP:
-            case Input.Keys.SPACE:
-            case Input.Keys.Z:
-                jumpPressed = true;
-                break;
-            case Input.Keys.SHIFT_LEFT:
-            case Input.Keys.SHIFT_RIGHT:
-                runPressed = true;
-                break;
-            case Input.Keys.ESCAPE:
-                Gdx.app.exit();
-                break;
-            case Input.Keys.F1:
-                debug = !debug; // Basculer le mode debug
-                break;
-        }
+        // Gestion des touches selon la configuration
+        if (keycode == Keys.MOVE_LEFT) moveLeft = true;
+        if (keycode == Keys.MOVE_RIGHT) moveRight = true;
+        if (keycode == Keys.JUMP || keycode == Keys.JUMP_ALT || keycode == Keys.JUMP_ALT2) jumpPressed = true;
+        if (keycode == Keys.RUN || keycode == Keys.RUN_ALT) runPressed = true;
+        if (keycode == Keys.CROUCH) isCrouching = true;
+        
+        // Touches système
+        if (keycode == Keys.DEBUG) debug = !debug;
+        if (keycode == Keys.PAUSE) Gdx.app.exit();
+        
         return true;
     }
     
     @Override
     public boolean keyUp(int keycode) {
-        switch (keycode) {
-            case Input.Keys.LEFT:
-                moveLeft = false;
-                break;
-            case Input.Keys.RIGHT:
-                moveRight = false;
-                break;
-            case Input.Keys.UP:
-            case Input.Keys.SPACE:
-            case Input.Keys.Z:
-                jumpPressed = false;
-                break;
-            case Input.Keys.SHIFT_LEFT:
-            case Input.Keys.SHIFT_RIGHT:
-                runPressed = false;
-                break;
-        }
+        // Gestion du relâchement des touches
+        if (keycode == Keys.MOVE_LEFT) moveLeft = false;
+        if (keycode == Keys.MOVE_RIGHT) moveRight = false;
+        if (keycode == Keys.JUMP || keycode == Keys.JUMP_ALT || keycode == Keys.JUMP_ALT2) jumpPressed = false;
+        if (keycode == Keys.RUN || keycode == Keys.RUN_ALT) runPressed = false;
+        if (keycode == Keys.CROUCH) isCrouching = false;
+        
         return true;
     }
     
