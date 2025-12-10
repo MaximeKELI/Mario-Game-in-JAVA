@@ -5,7 +5,6 @@ buildscript {
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
         classpath 'com.mobidevelop.robovm:robovm-gradle-plugin:2.3.16'
     }
 }
@@ -56,13 +55,17 @@ allprojects {
 project(":core") {
     apply plugin: "java-library"
     
-    // Configuration de test
+    // Basic test configuration
     test {
-        useJUnitPlatform()
         testLogging {
             events "passed", "skipped", "failed"
         }
         finalizedBy jacocoTestReport
+    }
+    
+    // Add JUnit 4 dependencies
+    dependencies {
+        testImplementation "junit:junit:4.13.2"
     }
     
     // Configuration Jacoco
@@ -74,13 +77,12 @@ project(":core") {
         dependsOn test
         
         reports {
-            xml.required = true
-            html.required = true
-            html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+            xml.enabled true
+            html.enabled true
         }
         
         afterEvaluate {
-            classDirectories.setFrom(files(classDirectories.files.collect {
+            classDirectories = files(classDirectories.files.collect {
                 fileTree(dir: it, exclude: [
                     '**/config/**',
                     '**/*Test*.*',
@@ -93,7 +95,7 @@ project(":core") {
                     '**/*_Factory*.*',
                     '**/*_Impl*.*'
                 ])
-            }))
+            })
         }
     }
 
