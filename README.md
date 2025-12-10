@@ -1,5 +1,9 @@
 # Super Mario Clone
 
+[![Java CI with Gradle](https://github.com/MaximeKELI/CS50P-HARVARD/actions/workflows/ci.yml/badge.svg)](https://github.com/MaximeKELI/CS50P-HARVARD/actions/workflows/ci.yml)
+[![Code Coverage](https://codecov.io/gh/MaximeKELI/CS50P-HARVARD/branch/main/graph/badge.svg)](https://codecov.io/gh/MaximeKELI/CS50P-HARVARD)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Un jeu de plateforme 2D avancé inspiré de Mario, développé en Java avec libGDX et Box2D. Ce projet implémente un moteur de jeu complet avec physique, collisions, animations et gestion des entrées utilisateur.
 
 ## 🚀 Prérequis
