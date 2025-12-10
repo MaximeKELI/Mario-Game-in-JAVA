@@ -1,0 +1,104 @@
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = jacocoVersion
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
+}
+
+task jacocoTestReport(type: JacocoReport, dependsOn: ['test']) {
+    group = 'Reporting'
+    description = 'Generate Jacoco coverage reports after running tests.'
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+        
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/html')
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/jacocoTestReport.xml')
+    }
+
+    def fileFilter = [
+        '**/R.class',
+        '**/R$*.class',
+        '**/BuildConfig.*',
+        '**/Manifest*.*',
+        '**/*Test*.*',
+        'android/**/*.*',
+        '**/models/**',
+        '**/di/**',
+        '**/*_Factory.class',
+        '**/*_MembersInjector.class',
+        '**/*_LifecycleAdapter.class',
+        '**/com/example/databinding/**',
+        '**/com/example/generated/callback/**',
+        '**/BR.class',
+        '**/R$*.class',
+        '**/R.class',
+        '**/BuildConfig.class'
+    ]
+
+    def debugTree = fileTree(dir: "${buildDir}/classes/java/main", excludes: fileFilter)
+    def mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.setFrom(files([mainSrc]))
+    classDirectories.setFrom(files([debugTree]))
+    executionData.setFrom(fileTree(dir: "${buildDir}", includes: [
+        'jacoco/test.exec',
+        'outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec',
+        'outputs/code-coverage/connected/*coverage.ec'
+    ]))
+}
+
+// Exécute les tests et génère le rapport de couverture
+test {
+    jacoco {
+        enabled = true
+        includes = ['com.mariogame.*']
+        excludes = ['com.mariogame.tests.*']
+        
+        // Exclure les classes de configuration et les classes générées
+        excludes += [
+            '**/config/**',
+            '**/BuildConfig.*',
+            '**/*Test*.*',
+            '**/androidTest/**',
+            '**/R.class',
+            '**/R$*.class',
+            '**/Manifest*.*',
+            '**/*$ViewBinder*.*',
+            '**/*$ViewInjector*.*',
+            '**/BuildConfig.*',
+            '**/*$Lambda$*.*',
+            '**/*Dagger*.*',
+            '**/*MembersInjector*.*',
+            '**/*_Factory.*',
+            '**/*_Provide*Factory*.*',
+            '**/com/bumptech/glide/**',
+            '**/com/google/**',
+            '**/androidx/**',
+            '**/dagger/**',
+            '**/*Module*.*',
+            '**/*Component*.*',
+            '**/*_*Factory*.*',
+            '**/*_Impl*.*',
+            '**/databinding/**',
+            '**/BR.*'
+        ]
+    }
+    
+    reports {
+        html.required = true
+        xml.required = true
+    }
+    
+    // Configuration pour les tests JUnit 5
+    useJUnitPlatform()
+    
+    // Active les rapports de couverture
+    finalizedBy jacocoTestReport
+}
