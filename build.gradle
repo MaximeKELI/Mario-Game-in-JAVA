@@ -23,11 +23,9 @@ allprojects {
         aiVersion = '1.8.2'
         gdxControllersVersion = '2.2.1'
         
-        // Dependencies de test
-        junitVersion = '5.8.2'
+        // Test dependencies
+        junitVersion = '4.13.2'
         mockitoVersion = '4.6.1'
-        assertjVersion = '3.22.0'
-        jacocoVersion = '0.8.8'
     }
 
     repositories {
@@ -47,63 +45,28 @@ project(":desktop") {
     }
 }
 
-// Configuration Jacoco pour tous les projets
-allprojects {
-    apply plugin: 'jacoco'
-}
-
 project(":core") {
     apply plugin: "java-library"
     
-    // Basic test configuration
+    dependencies {
+        // Core dependencies
+        api "com.badlogicgames.gdx:gdx:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+        
+        // Test dependencies
+        testImplementation "junit:junit:$junitVersion"
+        testImplementation "org.mockito:mockito-core:$mockitoVersion"
+        testImplementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+        testImplementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        testImplementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+    }
+    
     test {
         testLogging {
             events "passed", "skipped", "failed"
         }
-        finalizedBy jacocoTestReport
     }
     
-    // Add JUnit 4 dependencies
-    dependencies {
-        testImplementation "junit:junit:4.13.2"
-    }
-    
-    // Configuration Jacoco
-    jacoco {
-        toolVersion = jacocoVersion
-    }
-    
-    jacocoTestReport {
-        dependsOn test
-        
-        reports {
-            xml.enabled true
-            html.enabled true
-        }
-        
-        afterEvaluate {
-            classDirectories = files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: [
-                    '**/config/**',
-                    '**/*Test*.*',
-                    '**/BuildConfig.*',
-                    '**/R.class',
-                    '**/R$*.class',
-                    '**/Manifest*.*',
-                    '**/*$ViewBinder*.*',
-                    '**/*_MembersInjector*.*',
-                    '**/*_Factory*.*',
-                    '**/*_Impl*.*'
-                ])
-            })
-        }
-    }
-
-    configurations {
-        testCompileOnly
-        testRuntimeOnly
-    }
-
     sourceSets {
         test {
             java {
