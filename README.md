@@ -1,8 +1,10 @@
-# Super Mario Clone
+# 🍄 Super Mario Clone
 
 [![Java CI with Gradle](https://github.com/MaximeKELI/CS50P-HARVARD/actions/workflows/ci.yml/badge.svg)](https://github.com/MaximeKELI/CS50P-HARVARD/actions/workflows/ci.yml)
 [![Code Coverage](https://codecov.io/gh/MaximeKELI/CS50P-HARVARD/branch/main/graph/badge.svg)](https://codecov.io/gh/MaximeKELI/CS50P-HARVARD)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> 🌟 *"It's-a me, Mario!"* - Un clone fidèle du célèbre jeu de plateforme avec une touche moderne
 
 Un jeu de plateforme 2D avancé inspiré de Mario, développé en Java avec libGDX et Box2D. Ce projet implémente un moteur de jeu complet avec physique, collisions, animations et gestion des entrées utilisateur.
 
@@ -12,15 +14,15 @@ Un jeu de plateforme 2D avancé inspiré de Mario, développé en Java avec libG
 - Gradle 7.0+
 - LibGDX 1.11.0
 
-## 🎮 Comment exécuter
+## 💻 Installation et exécution
 
-1. Clonez ce dépôt :
+1. **Cloner le dépôt** :
    ```bash
-   git clone [URL_DU_REPO]
-   cd jeu_java
+   git clone https://github.com/MaximeKELI/CS50P-HARVARD.git
+   cd CS50P-HARVARD
    ```
 
-2. Lancez le jeu :
+2. **Lancer le jeu** :
    ```bash
    # Sur Linux/Mac
    ./gradlew desktop:run
@@ -29,66 +31,69 @@ Un jeu de plateforme 2D avancé inspiré de Mario, développé en Java avec libG
    gradlew.bat desktop:run
    ```
 
-3. Ou générez un fichier JAR exécutable :
+3. **Générer un exécutable** :
    ```bash
    ./gradlew desktop:dist
-   # Le fichier sera généré dans desktop/build/libs/
+   # Le fichier JAR sera disponible dans desktop/build/libs/
    ```
 
 ## 🎮 Contrôles
 
-- **Flèche gauche/droite** : Se déplacer
-- **Flèche haut/Espace/Z** : Sauter
-- **Maj gauche/droite** : Courir
-- **Flèche bas** : S'accroupir
-- **Échap** : Quitter le jeu
-- **F1** : Basculer le mode debug
+| Touche | Action |
+|--------|--------|
+| ← → | Se déplacer |
+| ↑ / Espace / Z | Sauter |
+| Maj gauche/droite | Courir |
+| ↓ | S'accroupir |
+| Échap | Quitter le jeu |
+| F1 | Activer le mode debug |
 
-## 🎯 Fonctionnalités implémentées
+## ✨ Fonctionnalités
 
 ### 🎮 Mécaniques de jeu
-- Moteur physique Box2D avancé avec gestion précise des collisions
-- Déplacement fluide avec accélération et frottements
-- Saut avec gravité réaliste et détection du sol
-- Système de course avec accroupissement
-- Gestion des plateformes et des obstacles
-- Système de score et de vies
-- Chronomètre de partie
+- 🏃‍♂️ Moteur physique Box2D avancé avec gestion précise des collisions
+- 🎯 Déplacement fluide avec accélération et frottements
+- ⚡ Saut avec gravité réaliste et détection du sol
+- 🏃 Système de course avec accroupissement
+- 🧱 Gestion des plateformes et des obstacles
+- 🏆 Système de score et de vies
+- ⏱️ Chronomètre de partie
 
-### 🖥️ Technique
-- Architecture modulaire et orientée objet
-- Gestion des entrées utilisateur avancée
-- Système de caméra dynamique avec suivi fluide
-- Gestion des états du joueur (marche, course, saut, chute, accroupi)
-- Système de débogage intégré (appuyez sur F1)
-- HUD informatif (score, vies, temps, pièces)
+### 🖥️ Architecture technique
+- 🏗️ Architecture modulaire et orientée objet
+- 🎛️ Gestion avancée des entrées utilisateur
+- 🎥 Caméra dynamique avec suivi fluide
+- 🎮 Gestion des états du joueur (marche, course, saut, chute, accroupi)
+- 🔍 Système de débogage intégré (touche F1)
+- 📊 HUD informatif (score, vies, temps, pièces)
 
-### 🎨 Graphismes
-- Animations fluides pour tous les états du personnage
-- Arrière-plan défilant
-- Effets visuels (clignotement lors des dégâts)
-- Système de spritesheets pour les animations
+### 🎨 Graphismes et sons
+- 🎭 Animations fluides pour tous les états du personnage
+- 🌄 Arrière-plan défilant
+- ✨ Effets visuels (clignotement lors des dégâts)
+- 🖼️ Système de spritesheets pour les animations
+- 🎵 Musique et effets sonores immersifs
 
-## 📁 Structure du projet
+## 🏗️ Structure du projet
 
 ```
-core/
-├── assets/                  # Ressources du jeu
-│   ├── player/             # Sprites et animations du joueur
-│   ├── levels/             # Fichiers de niveau
-│   ├── sounds/             # Effets sonores et musique
-│   └── ui/                 # Éléments d'interface utilisateur
-├── src/com/mariogame/core/ # Code source principal
-│   ├── entities/           # Entités du jeu
-│   ├── screens/            # Écrans du jeu (menu, jeu, game over)
-│   ├── utils/              # Utilitaires
-│   ├── Hud.java            # Gestion de l'interface utilisateur
-│   ├── MarioGame.java      # Classe principale du jeu
-│   └── Player.java         # Logique du joueur
+src/
+├── main/
+│   ├── java/com/mariogame/
+│   │   ├── core/            # Logique principale du jeu
+│   │   │   ├── entities/    # Personnages et objets du jeu
+│   │   │   ├── managers/    # Gestionnaires (son, collisions, etc.)
+│   │   │   ├── screens/     # Écrans (menu, jeu, game over)
+│   │   │   ├── Hud.java     # Interface utilisateur
+│   │   │   └── MarioGame.java # Classe principale
+│   └── resources/           # Assets (images, sons, niveaux)
+│       ├── player/          # Sprites et animations du joueur
+│       ├── levels/          # Fichiers de niveau
+│       └── sounds/          # Effets sonores et musique
 desktop/                    # Point d'entrée pour la version desktop
 ```
 
-## 🚧 Améliorations futures
+## 🚀 Améliorations futures
 
 ### 🎮 Gameplay
 - [ ] Ajout d'ennemis avec IA simple
@@ -96,8 +101,34 @@ desktop/                    # Point d'entrée pour la version desktop
 - [ ] Plateformes mobiles et objets interactifs
 - [ ] Système de sauvegarde
 - [ ] Menu principal et écrans de transition
+- [ ] Niveaux additionnels
+- [ ] Mode multijoueur local
 
-### 🎨 Contenu
+### 🛠️ Technique
+- [ ] Amélioration des performances
+- [ ] Meilleure gestion de la mémoire
+- [ ] Tests unitaires supplémentaires
+- [ ] Documentation du code
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Voici comment contribuer :
+
+1. Forkez le projet
+2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Committez vos changements (`git commit -m 'Ajout d'une nouvelle fonctionnalité'`)
+4. Poussez vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. Ouvrez une Pull Request
+
+## 📜 Licence
+
+Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+---
+
+<div align="center">
+  Fait avec ❤️ par MaximeKELI | Inspiré du célèbre jeu Mario de Nintendo®
+</div>
 - [ ] Plus de niveaux avec thèmes variés
 - [ ] Effets sonores et musique de fond
 - [ ] Plus d'animations et d'effets visuels
