@@ -101,14 +101,18 @@ desktop/                    # Point d'entrée pour la version desktop
 - [ ] Plateformes mobiles et objets interactifs
 - [ ] Système de sauvegarde
 - [ ] Menu principal et écrans de transition
-- [ ] Niveaux additionnels
+- [ ] Niveaux additionnels avec thèmes variés
 - [ ] Mode multijoueur local
+- [ ] Plus d'animations et d'effets visuels
+- [ ] Système de particules pour les effets spéciaux
 
 ### 🛠️ Technique
 - [ ] Amélioration des performances
 - [ ] Meilleure gestion de la mémoire
 - [ ] Tests unitaires supplémentaires
 - [ ] Documentation du code
+- [ ] Support des contrôles tactiles
+- [ ] Internationalisation (multi-langues)
 
 ## 🤝 Contribution
 
@@ -129,16 +133,6 @@ Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de
 <div align="center">
   Fait avec ❤️ par MaximeKELI | Inspiré du célèbre jeu Mario de Nintendo®
 </div>
-- [ ] Plus de niveaux avec thèmes variés
-- [ ] Effets sonores et musique de fond
-- [ ] Plus d'animations et d'effets visuels
-- [ ] Système de particules pour les effets spéciaux
-
-### 🛠 Technique
-- [ ] Optimisation des performances
-- [ ] Gestion de la mémoire améliorée
-- [ ] Support des contrôles tactiles
-- [ ] Internationalisation (multi-langues)
 
 ## 📝 Notes pour les contributeurs
 
@@ -146,8 +140,3 @@ Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de
 2. Documentez votre code avec des commentaires clairs
 3. Testez vos modifications avant de soumettre une pull request
 4. Utilisez des messages de commit descriptifs
-
-## 📄 Licence
-
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-# Mario-Game-in-JAVA
