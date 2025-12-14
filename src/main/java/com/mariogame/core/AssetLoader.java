@@ -13,9 +13,10 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
-import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
+// FreeType support (nécessite gdx-freetype extension)
+// import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+// import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
+// import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -106,8 +107,9 @@ public class AssetLoader extends AssetManager implements Disposable {
     private void setupLoaders() {
         // Configuration du chargeur de polices
         FileHandleResolver resolver = new InternalFileHandleResolver();
-        setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
-        setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
+        // FreeType support (nécessite gdx-freetype extension)
+        // setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
+        // setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
         
         // Configuration du chargeur de cartes Tiled
         setLoader(TiledMap.class, new TmxMapLoader(resolver));
@@ -165,16 +167,17 @@ public class AssetLoader extends AssetManager implements Disposable {
     }
     
     private void loadFonts() {
-        // Chargement de la police par défaut
-        FreetypeFontLoader.FreeTypeFontLoaderParameter fontParams = new FreetypeFontLoader.FreeTypeFontLoaderParameter();
-        fontParams.fontFileName = FONT_DEFAULT;
-        fontParams.fontParameters.size = 16;
-        load("default" + FNT_EXTENSION, BitmapFont.class, fontParams);
+        // Chargement des polices (FreeType désactivé pour l'instant)
+        // Les polices seront chargées depuis des fichiers .fnt existants si disponibles
+        // FreetypeFontLoader.FreeTypeFontLoaderParameter fontParams = new FreetypeFontLoader.FreeTypeFontLoaderParameter();
+        // fontParams.fontFileName = FONT_DEFAULT;
+        // fontParams.fontParameters.size = 16;
+        // load("default" + FNT_EXTENSION, BitmapFont.class, fontParams);
         
-        // Chargement des autres tailles de police
-        load(FONT_SMALL, BitmapFont.class);
-        load(FONT_MEDIUM, BitmapFont.class);
-        load(FONT_LARGE, BitmapFont.class);
+        // Chargement des autres tailles de police (si fichiers .fnt disponibles)
+        // load(FONT_SMALL, BitmapFont.class);
+        // load(FONT_MEDIUM, BitmapFont.class);
+        // load(FONT_LARGE, BitmapFont.class);
     }
     
     public void loadAtlas(String path) {

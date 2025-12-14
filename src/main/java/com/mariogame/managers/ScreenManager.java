@@ -17,7 +17,7 @@ import com.mariogame.utils.Constants;
  */
 public class ScreenManager implements Disposable {
     private final MarioGame game;
-    private final ObjectMap<ScreenType, AbstractScreen> screens;
+    private final ObjectMap<ScreenType, Screen> screens;
     private final Array<Screen> activeScreens;
     private ScreenType currentScreenType;
     private ScreenType nextScreenType;
@@ -79,20 +79,8 @@ public class ScreenManager implements Disposable {
         
         transitionInProgress = true;
         
-        // Si un écran est déjà affiché, on le fait disparaître progressivement
-        if (currentScreenType != null) {
-            AbstractScreen currentScreen = screens.get(currentScreenType);
-            currentScreen.hide(new Runnable() {
-                @Override
-                public void run() {
-                    // Une fois l'écran actuel masqué, on affiche le suivant
-                    completeTransition();
-                }
-            });
-        } else {
-            // Pas d'écran actuel, on passe directement à l'affichage du suivant
-            completeTransition();
-        }
+        // Pas d'écran actuel, on passe directement à l'affichage du suivant
+        completeTransition();
     }
     
     /**
@@ -101,25 +89,29 @@ public class ScreenManager implements Disposable {
     private void completeTransition() {
         // Cacher l'écran précédent s'il existe
         if (currentScreenType != null) {
-            AbstractScreen previousScreen = screens.get(currentScreenType);
-            previousScreen.setActive(false);
+            Screen previousScreen = screens.get(currentScreenType);
+            if (previousScreen != null) {
+                previousScreen.hide();
+            }
         }
         
         // Mettre à jour l'écran courant
         currentScreenType = nextScreenType;
-        AbstractScreen nextScreen = screens.get(currentScreenType);
+        Screen nextScreen = screens.get(currentScreenType);
         
-        // Initialiser l'écran s'il ne l'est pas déjà
-        if (!nextScreen.isInitialized()) {
-            nextScreen.initialize();
+        if (nextScreen != null) {
+            // Initialiser l'écran s'il hérite d'AbstractScreen
+            if (nextScreen instanceof AbstractScreen) {
+                AbstractScreen abstractScreen = (AbstractScreen) nextScreen;
+                if (!abstractScreen.isInitialized()) {
+                    abstractScreen.initialize();
+                }
+                abstractScreen.setActive(true);
+            }
+            
+            nextScreen.show();
+            nextScreen.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         }
-        
-        // Activer l'écran
-        nextScreen.setActive(true);
-        nextScreen.show();
-        
-        // Mettre à jour le viewport
-        nextScreen.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         
         // Réinitialiser le flag de transition
         transitionInProgress = false;
@@ -131,7 +123,7 @@ public class ScreenManager implements Disposable {
      * Obtient l'écran actuel
      * @return L'écran actuel ou null si aucun écran n'est affiché
      */
-    public AbstractScreen getCurrentScreen() {
+    public Screen getCurrentScreen() {
         return currentScreenType != null ? screens.get(currentScreenType) : null;
     }
     
@@ -140,7 +132,7 @@ public class ScreenManager implements Disposable {
      * @param screenType Le type d'écran
      * @return L'écran correspondant
      */
-    public AbstractScreen getScreen(ScreenType screenType) {
+    public Screen getScreen(ScreenType screenType) {
         return screens.get(screenType);
     }
     
@@ -150,7 +142,7 @@ public class ScreenManager implements Disposable {
      */
     public void render(float delta) {
         if (currentScreenType != null) {
-            AbstractScreen screen = screens.get(currentScreenType);
+            Screen screen = screens.get(currentScreenType);
             if (screen != null) {
                 screen.render(delta);
             }
@@ -163,7 +155,7 @@ public class ScreenManager implements Disposable {
      * @param height La nouvelle hauteur
      */
     public void resize(int width, int height) {
-        for (AbstractScreen screen : screens.values()) {
+        for (Screen screen : screens.values()) {
             if (screen != null) {
                 screen.resize(width, height);
             }
@@ -175,7 +167,7 @@ public class ScreenManager implements Disposable {
      */
     public void pause() {
         if (currentScreenType != null) {
-            AbstractScreen screen = screens.get(currentScreenType);
+            Screen screen = screens.get(currentScreenType);
             if (screen != null) {
                 screen.pause();
             }
@@ -187,7 +179,7 @@ public class ScreenManager implements Disposable {
      */
     public void resume() {
         if (currentScreenType != null) {
-            AbstractScreen screen = screens.get(currentScreenType);
+            Screen screen = screens.get(currentScreenType);
             if (screen != null) {
                 screen.resume();
             }
@@ -202,7 +194,7 @@ public class ScreenManager implements Disposable {
         Gdx.app.log("ScreenManager", "Disposing all screens");
         
         // Libérer tous les écrans
-        for (AbstractScreen screen : screens.values()) {
+        for (Screen screen : screens.values()) {
             if (screen != null) {
                 screen.dispose();
             }

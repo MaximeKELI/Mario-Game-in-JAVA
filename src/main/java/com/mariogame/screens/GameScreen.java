@@ -8,15 +8,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mariogame.MarioGame;
 import com.mariogame.core.AssetLoader;
-import com.mariogame.core.GameConfig;
-import com.mariogame.entities.Player;
-import com.mariogame.utils.WorldUtils;
+import com.mariogame.utils.Constants;
+import com.mariogame.world.GameWorld;
 
 /**
  * Écran principal du jeu qui gère le rendu et la logique du gameplay.
@@ -30,18 +28,9 @@ public class GameScreen implements Screen {
     private Viewport gameViewport;
     private OrthogonalTiledMapRenderer mapRenderer;
     
-    // Monde physique
-    private World world;
+    // Monde de jeu
+    private GameWorld gameWorld;
     private Box2DDebugRenderer debugRenderer;
-    
-    // Entités
-    private Player player;
-    
-    // Contrôles
-    private boolean leftPressed = false;
-    private boolean rightPressed = false;
-    private boolean jumpPressed = false;
-    private boolean runPressed = false;
     
     // Rendu
     private SpriteBatch batch;
@@ -55,95 +44,59 @@ public class GameScreen implements Screen {
         // Initialisation de la caméra et de la vue
         gameCamera = new OrthographicCamera();
         gameViewport = new FitViewport(
-            GameConfig.World.V_WIDTH * GameConfig.World.PPM, 
-            GameConfig.World.V_HEIGHT * GameConfig.World.PPM, 
+            Constants.WorldConfig.V_WIDTH * Constants.WorldConfig.PPM, 
+            Constants.WorldConfig.V_HEIGHT * Constants.WorldConfig.PPM, 
             gameCamera
         );
         
-        // Initialisation du monde physique
-        world = new World(new Vector2(0, -GameConfig.World.GRAVITY), true);
+        // Initialisation du debug renderer
         debugRenderer = new Box2DDebugRenderer();
         
         // Initialisation du rendu
-        batch = new SpriteBatch();
+        batch = game.getSpriteBatch();
         
-        // Initialisation du joueur
-        player = new Player(world, 2, 10);
+        // Initialisation du monde de jeu
+        gameWorld = new GameWorld();
+        gameWorld.setGameCamera(gameCamera);
         
-        // Configuration des entrées
-        Gdx.input.setInputProcessor(this);
+        // Initialiser le joueur avec les managers
+        if (gameWorld.getPlayer() != null) {
+            gameWorld.initializePlayer(
+                game.getInputManager(),
+                game.getAudioManager(),
+                game.getAssetManager()
+            );
+        }
         
         // Chargement de la carte
-        loadMap("level1");
+        loadMap("1-1");
     }
     
     private void loadMap(String mapName) {
-        // Implémentation du chargement de la carte
-        // mapRenderer = new OrthogonalTiledMapRenderer(assetLoader.getMap(mapName), 1 / GameConfig.World.PPM);
-    }
-    
-    private void handleInput(float delta) {
-        // Gestion des entrées utilisateur
-        if (leftPressed) {
-            player.moveLeft();
-            if (runPressed) {
-                player.runLeft();
-            }
-        } else if (rightPressed) {
-            player.moveRight();
-            if (runPressed) {
-                player.runRight();
-            }
-        } else {
-            player.stop();
+        // Charger le niveau
+        gameWorld.loadLevel(mapName);
+        
+        // Initialiser le joueur après le chargement
+        if (gameWorld.getPlayer() != null) {
+            gameWorld.initializePlayer(
+                game.getInputManager(),
+                game.getAudioManager(),
+                game.getAssetManager()
+            );
         }
         
-        if (jumpPressed) {
-            player.jump();
-        }
+        // Implémentation du chargement de la carte
+        // mapRenderer = new OrthogonalTiledMapRenderer(assetLoader.getMap(mapName), 1 / Constants.WorldConfig.PPM);
     }
     
     private void update(float delta) {
-        // Mise à jour du monde physique
-        world.step(
-            GameConfig.World.TIME_STEP, 
-            GameConfig.World.VELOCITY_ITERATIONS, 
-            GameConfig.World.POSITION_ITERATIONS
-        );
-        
-        // Mise à jour du joueur
-        player.update(delta);
-        
-        // Mise à jour de la caméra
-        updateCamera(delta);
-    }
-    
-    private void updateCamera(float delta) {
-        // Suivre le joueur avec la caméra
-        if (player != null) {
-            Vector2 position = player.getPosition();
-            gameCamera.position.x = position.x * GameConfig.World.PPM;
-            gameCamera.position.y = position.y * GameConfig.World.PPM;
-            
-            // Limiter la caméra aux bords de la carte
-            float viewportWidth = gameViewport.getWorldWidth();
-            float viewportHeight = gameViewport.getWorldHeight();
-            
-            // Ici, vous devriez utiliser la taille réelle de votre carte
-            float mapWidth = 100 * GameConfig.World.PPM; // Exemple
-            float mapHeight = 20 * GameConfig.World.PPM; // Exemple
-            
-            gameCamera.position.x = Math.max(viewportWidth / 2, Math.min(mapWidth - viewportWidth / 2, gameCamera.position.x));
-            gameCamera.position.y = Math.max(viewportHeight / 2, Math.min(mapHeight - viewportHeight / 2, gameCamera.position.y));
-            
-            gameCamera.update();
-        }
+        // Mise à jour du monde de jeu
+        gameWorld.update(delta);
     }
     
     @Override
     public void render(float delta) {
         // Mise à jour
-        handleInput(delta);
         update(delta);
         
         // Effacer l'écran
@@ -160,15 +113,15 @@ public class GameScreen implements Screen {
         batch.setProjectionMatrix(gameCamera.combined);
         batch.begin();
         
-        // Rendu du joueur
-        player.render(batch);
+        // Rendu du monde (inclut le joueur)
+        gameWorld.render(batch);
         
         batch.end();
         
         // Rendu du debug si activé
-        if (debugMode) {
-            debugRenderer.render(world, 
-                gameCamera.combined.scl(GameConfig.World.PPM));
+        if (debugMode && gameWorld.getPhysicsWorld() != null) {
+            debugRenderer.render(gameWorld.getPhysicsWorld(), 
+                gameCamera.combined.scl(Constants.WorldConfig.PPM));
         }
         
         // Rendu de l'interface utilisateur
@@ -193,12 +146,16 @@ public class GameScreen implements Screen {
     
     @Override
     public void pause() {
-        // Mettre le jeu en pause
+        if (gameWorld != null) {
+            gameWorld.setPaused(true);
+        }
     }
     
     @Override
     public void resume() {
-        // Reprendre le jeu
+        if (gameWorld != null) {
+            gameWorld.setPaused(false);
+        }
     }
     
     @Override
@@ -212,67 +169,15 @@ public class GameScreen implements Screen {
         if (mapRenderer != null) {
             mapRenderer.dispose();
         }
-        if (world != null) {
-            world.dispose();
+        if (gameWorld != null) {
+            gameWorld.dispose();
         }
         if (debugRenderer != null) {
             debugRenderer.dispose();
-        }
-        if (batch != null) {
-            batch.dispose();
         }
         if (stage != null) {
             stage.dispose();
         }
         Gdx.app.log("GameScreen", "dispose() called");
-    }
-    
-    // Gestion des entrées tactiles/au clavier
-    public boolean keyDown(int keycode) {
-        switch (keycode) {
-            case com.badlogic.gdx.Input.Keys.LEFT:
-                leftPressed = true;
-                break;
-            case com.badlogic.gdx.Input.Keys.RIGHT:
-                rightPressed = true;
-                break;
-            case com.badlogic.gdx.Input.Keys.UP:
-            case com.badlogic.gdx.Input.Keys.SPACE:
-            case com.badlogic.gdx.Input.Keys.Z:
-                jumpPressed = true;
-                break;
-            case com.badlogic.gdx.Input.Keys.SHIFT_LEFT:
-            case com.badlogic.gdx.Input.Keys.SHIFT_RIGHT:
-                runPressed = true;
-                break;
-            case com.badlogic.gdx.Input.Keys.ESCAPE:
-                game.setScreen(new PauseScreen(game, this));
-                break;
-            case com.badlogic.gdx.Input.Keys.F1:
-                debugMode = !debugMode;
-                break;
-        }
-        return true;
-    }
-    
-    public boolean keyUp(int keycode) {
-        switch (keycode) {
-            case com.badlogic.gdx.Input.Keys.LEFT:
-                leftPressed = false;
-                break;
-            case com.badlogic.gdx.Input.Keys.RIGHT:
-                rightPressed = false;
-                break;
-            case com.badlogic.gdx.Input.Keys.UP:
-            case com.badlogic.gdx.Input.Keys.SPACE:
-            case com.badlogic.gdx.Input.Keys.Z:
-                jumpPressed = false;
-                break;
-            case com.badlogic.gdx.Input.Keys.SHIFT_LEFT:
-            case com.badlogic.gdx.Input.Keys.SHIFT_RIGHT:
-                runPressed = false;
-                break;
-        }
-        return true;
     }
 }

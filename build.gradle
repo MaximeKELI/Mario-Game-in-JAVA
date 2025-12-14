@@ -76,6 +76,11 @@ project(":core") {
         main {
             java {
                 srcDirs = ['../src/main/java']
+                exclude '**/core/MarioGame.java'
+                exclude '**/core/Player.java'
+                exclude '**/core/GameManager.java'
+                exclude '**/core/GameConfig.java'
+                exclude '**/core/Hud.java'
             }
             resources {
                 srcDirs = ['../src/main/resources', '../src/main/java/com/mariogame/assets']

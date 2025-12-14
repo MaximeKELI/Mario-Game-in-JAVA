@@ -30,12 +30,12 @@ public final class Constants {
         
         // Masques de collision
         public static final class Masks {
-            public static final short PLAYER = GROUND | ENEMY | ITEM | SENSOR | ENEMY_HEAD | PLATFORM | WALL;
-            public static final short ENEMY = GROUND | PLAYER | ITEM | PLAYER_HEAD | ENEMY | PROJECTILE | PLATFORM;
-            public static final short ITEM = GROUND | PLAYER | ENEMY | PROJECTILE | PLATFORM;
-            public static final short SENSOR = PLAYER | ENEMY;
-            public static final short PROJECTILE = GROUND | ENEMY | ITEM | PLATFORM;
-            public static final short PLAYER_FOOT = GROUND | PLATFORM;
+            public static final short PLAYER = (short)(GROUND | ENEMY | ITEM | SENSOR | ENEMY_HEAD | PLATFORM | WALL);
+            public static final short ENEMY = (short)(GROUND | PLAYER | ITEM | PLAYER_HEAD | ENEMY | PROJECTILE | PLATFORM);
+            public static final short ITEM = (short)(GROUND | PLAYER | ENEMY | PROJECTILE | PLATFORM);
+            public static final short SENSOR = (short)(PLAYER | ENEMY);
+            public static final short PROJECTILE = (short)(GROUND | ENEMY | ITEM | PLATFORM);
+            public static final short PLAYER_FOOT = (short)(GROUND | PLATFORM);
         }
     }
     
