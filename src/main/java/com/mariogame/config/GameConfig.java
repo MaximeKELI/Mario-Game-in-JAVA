@@ -129,6 +129,10 @@ public class GameConfig {
         this.soundVolume = Math.max(0, Math.min(1, volume));
     }
     
+    public boolean isSoundEnabled() {
+        return soundVolume > 0;
+    }
+    
     public boolean isDebugMode() {
         return debugMode;
     }

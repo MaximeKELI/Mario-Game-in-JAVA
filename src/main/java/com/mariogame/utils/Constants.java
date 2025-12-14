@@ -24,15 +24,33 @@ public final class Constants {
         public static final short PLAYER_HEAD = 32;
         public static final short ENEMY_HEAD = 64;
         public static final short PROJECTILE = 128;
+        public static final short PLATFORM = 256;
+        public static final short WALL = 512;
+        public static final short PLAYER_FOOT = 1024;
         
         // Masques de collision
         public static final class Masks {
-            public static final short PLAYER = GROUND | ENEMY | ITEM | SENSOR | ENEMY_HEAD;
-            public static final short ENEMY = GROUND | PLAYER | ITEM | PLAYER_HEAD | ENEMY | PROJECTILE;
-            public static final short ITEM = GROUND | PLAYER | ENEMY | PROJECTILE;
+            public static final short PLAYER = GROUND | ENEMY | ITEM | SENSOR | ENEMY_HEAD | PLATFORM | WALL;
+            public static final short ENEMY = GROUND | PLAYER | ITEM | PLAYER_HEAD | ENEMY | PROJECTILE | PLATFORM;
+            public static final short ITEM = GROUND | PLAYER | ENEMY | PROJECTILE | PLATFORM;
             public static final short SENSOR = PLAYER | ENEMY;
-            public static final short PROJECTILE = GROUND | ENEMY | ITEM;
+            public static final short PROJECTILE = GROUND | ENEMY | ITEM | PLATFORM;
+            public static final short PLAYER_FOOT = GROUND | PLATFORM;
         }
+    }
+    
+    // États du joueur
+    public enum PlayerState {
+        IDLE,
+        WALKING,
+        RUNNING,
+        JUMPING,
+        FALLING,
+        WALL_SLIDING,
+        DASHING,
+        CROUCHING,
+        HURT,
+        DEAD
     }
     
     // Noms des fichiers de ressources
@@ -174,5 +192,27 @@ public final class Constants {
         public static final int VELOCITY_ITERATIONS = 6;
         public static final int POSITION_ITERATIONS = 2;
         public static final float TIME_STEP = 1/60f;
+    }
+    
+    // Configuration des niveaux
+    public static final class LevelConfig {
+        public static final int LEVELS_PER_WORLD = 4;
+        public static final int TOTAL_WORLDS = 8;
+        public static final float LEVEL_TRANSITION_TIME = 2f;
+        public static final float TIME_LIMIT = 400f; // Temps limite par niveau en secondes
+    }
+    
+    // Configuration des touches
+    public static final class Keys {
+        public static final int MOVE_LEFT = com.badlogic.gdx.Input.Keys.LEFT;
+        public static final int MOVE_RIGHT = com.badlogic.gdx.Input.Keys.RIGHT;
+        public static final int JUMP = com.badlogic.gdx.Input.Keys.SPACE;
+        public static final int JUMP_ALT = com.badlogic.gdx.Input.Keys.UP;
+        public static final int JUMP_ALT2 = com.badlogic.gdx.Input.Keys.W;
+        public static final int RUN = com.badlogic.gdx.Input.Keys.SHIFT_LEFT;
+        public static final int RUN_ALT = com.badlogic.gdx.Input.Keys.SHIFT_RIGHT;
+        public static final int CROUCH = com.badlogic.gdx.Input.Keys.DOWN;
+        public static final int DEBUG = com.badlogic.gdx.Input.Keys.F1;
+        public static final int PAUSE = com.badlogic.gdx.Input.Keys.ESCAPE;
     }
 }

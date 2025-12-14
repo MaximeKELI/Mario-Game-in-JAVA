@@ -113,6 +113,21 @@ public class AssetLoader extends AssetManager implements Disposable {
         setLoader(TiledMap.class, new TmxMapLoader(resolver));
     }
     
+    /**
+     * Charge uniquement les ressources essentielles pour l'écran de chargement.
+     * Ces ressources doivent être disponibles immédiatement.
+     */
+    public static void loadEssentialAssets(AssetManager assetManager) {
+        // Charger uniquement les ressources minimales nécessaires pour l'écran de chargement
+        // Par exemple, une police de base et peut-être un logo
+        try {
+            // Charger une police par défaut si nécessaire
+            // Les autres ressources seront chargées de manière asynchrone
+        } catch (Exception e) {
+            log.error("Erreur lors du chargement des ressources essentielles", e);
+        }
+    }
+    
     public void loadAll() {
         log.info("Début du chargement des ressources...");
         
@@ -216,12 +231,18 @@ public class AssetLoader extends AssetManager implements Disposable {
     
     // Méthodes utilitaires
     
+    /**
+     * Retourne le pourcentage de progression du chargement (0-100).
+     */
     public float getProgress() {
-        return getProgress() * 100f;
+        return super.getProgress() * 100f;
     }
     
-    public boolean isLoaded(String fileName) {
-        return isLoaded(fileName);
+    /**
+     * Vérifie si une ressource est chargée.
+     */
+    public boolean isResourceLoaded(String fileName) {
+        return super.isLoaded(fileName);
     }
     
     public void unloadAll() {
