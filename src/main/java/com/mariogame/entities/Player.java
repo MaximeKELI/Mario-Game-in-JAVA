@@ -1,27 +1,31 @@
 package com.mariogame.entities;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.mariogame.managers.SoundManager;
+import com.mariogame.managers.AudioManager;
+import com.mariogame.managers.InputManager;
 import com.mariogame.utils.Constants;
 import com.mariogame.utils.Constants.PlayerState;
 import com.mariogame.world.GameWorld;
 
 /**
- * Classe représentant le personnage jouable (Mario).
- * Gère les contrôles, l'animation et la physique du joueur.
+ * Classe professionnelle représentant le personnage jouable (Mario).
+ * Gère les contrôles, l'animation et la physique du joueur avec un niveau de qualité AAA.
+ * Architecture inspirée des meilleures pratiques de l'industrie du jeu vidéo.
  */
 public class Player extends Entity {
-    // Constantes de contrôle
+    // Constantes de contrôle (utilisant les constantes du jeu)
     private static final float MOVE_FORCE = 10f;
-    private static final float MAX_SPEED = 5f;
-    private static final float JUMP_FORCE = 12f;
+    private static final float MAX_SPEED = Constants.PlayerConfig.RUN_SPEED;
+    private static final float WALK_SPEED = Constants.PlayerConfig.WALK_SPEED;
+    private static final float JUMP_FORCE = Constants.PlayerConfig.JUMP_FORCE;
     private static final float DASH_FORCE = 15f;
     private static final float DASH_DURATION = 0.15f;
     private static final float DASH_COOLDOWN = 0.5f;
@@ -30,6 +34,7 @@ public class Player extends Entity {
     private static final float WALL_JUMP_FORCE_Y = 10f;
     private static final float COYOTE_TIME = 0.15f;
     private static final float JUMP_BUFFER_TIME = 0.1f;
+    private static final float ANIMATION_FPS = 12f;
     
     // États du joueur
     private PlayerState state = PlayerState.IDLE;
@@ -42,7 +47,6 @@ public class Player extends Entity {
     private boolean isDead = false;
     
     // Compteurs et temporisateurs
-    private float stateTime = 0f;
     private float dashTime = 0f;
     private float dashCooldown = 0f;
     private float coyoteTime = 0f;
@@ -52,18 +56,21 @@ public class Player extends Entity {
     private boolean isBlinking = false;
     
     // Propriétés du joueur
-    private int lives = 3;
+    private int lives = Constants.PlayerConfig.STARTING_LIVES;
     private int coins = 0;
     private int score = 0;
     private boolean isInvincible = false;
     private boolean hasPowerUp = false;
     
     // Références
-    private final GameWorld gameWorld;
-    private final SoundManager soundManager;
+    private GameWorld gameWorld;
+    private InputManager inputManager;
+    private AudioManager audioManager;
+    private AssetManager assetManager;
     
     // Animations
     private Animation<TextureRegion> idleAnimation;
+    private Animation<TextureRegion> walkAnimation;
     private Animation<TextureRegion> runAnimation;
     private Animation<TextureRegion> jumpAnimation;
     private Animation<TextureRegion> fallAnimation;
@@ -71,20 +78,24 @@ public class Player extends Entity {
     private Animation<TextureRegion> dashAnimation;
     private Animation<TextureRegion> currentAnimation;
     
+    // Capteurs de collision
+    private Fixture groundSensor;
+    private Fixture leftWallSensor;
+    private Fixture rightWallSensor;
+    
     public Player(World world, float x, float y) {
-        super(world, x, y, 0.8f, 1.8f);
-        
-        // Initialiser les animations (à implémenter)
-        // loadAnimations();
-        
-        // Initialiser le corps physique
+        super(world, x, y, Constants.PlayerConfig.WIDTH, Constants.PlayerConfig.HEIGHT);
         createBody();
-        
-        // Initialiser le gestionnaire de son
-        this.soundManager = new SoundManager(this);
-        
-        // Référence au monde de jeu
-        this.gameWorld = null; // Sera défini par GameWorld
+    }
+    
+    /**
+     * Initialise les références aux managers.
+     */
+    public void initialize(InputManager inputManager, AudioManager audioManager, AssetManager assetManager) {
+        this.inputManager = inputManager;
+        this.audioManager = audioManager;
+        this.assetManager = assetManager;
+        loadAnimations();
     }
     
     @Override
@@ -93,40 +104,33 @@ public class Player extends Entity {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(position);
-        bodyDef.fixedRotation = true; // Empêcher la rotation
+        bodyDef.fixedRotation = true;
         
         // Créer le corps dans le monde
         body = world.createBody(bodyDef);
         body.setUserData(this);
         
-        // Créer la forme de collision (hitbox)
+        // Créer la forme de collision principale
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(width / 2, height / 2);
         
         // Définir les propriétés physiques
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
-        fixtureDef.density = 1f;
-        fixtureDef.friction = 0.2f;
-        fixtureDef.restitution = 0.1f;
+        fixtureDef.density = Constants.PlayerConfig.DENSITY;
+        fixtureDef.friction = Constants.PlayerConfig.FRICTION;
+        fixtureDef.restitution = Constants.PlayerConfig.RESTITUTION;
         
         // Définir les filtres de collision
         fixtureDef.filter.categoryBits = Constants.CollisionBits.PLAYER;
-        fixtureDef.filter.maskBits = (short) (
-            Constants.CollisionBits.GROUND |
-            Constants.CollisionBits.ENEMY |
-            Constants.CollisionBits.ITEM |
-            Constants.CollisionBits.PLATFORM
-        );
+        fixtureDef.filter.maskBits = Constants.CollisionBits.Masks.PLAYER;
         
         // Créer la fixture principale
         Fixture fixture = body.createFixture(fixtureDef);
         fixture.setUserData("player_main");
         
-        // Créer un capteur pour détecter le sol
+        // Créer les capteurs
         createGroundSensor();
-        
-        // Créer des capteurs pour détecter les murs
         createWallSensors();
         
         // Libérer la forme
@@ -134,7 +138,6 @@ public class Player extends Entity {
     }
     
     private void createGroundSensor() {
-        // Créer un capteur sous les pieds du joueur
         PolygonShape sensorShape = new PolygonShape();
         sensorShape.setAsBox(width / 2.2f, 0.1f, new Vector2(0, -height / 2), 0);
         
@@ -142,23 +145,22 @@ public class Player extends Entity {
         sensorDef.shape = sensorShape;
         sensorDef.isSensor = true;
         sensorDef.filter.categoryBits = Constants.CollisionBits.PLAYER_FOOT;
-        sensorDef.filter.maskBits = (short) (Constants.CollisionBits.GROUND | Constants.CollisionBits.PLATFORM);
+        sensorDef.filter.maskBits = Constants.CollisionBits.Masks.PLAYER_FOOT;
         
-        Fixture sensor = body.createFixture(sensorDef);
-        sensor.setUserData("player_foot_sensor");
+        groundSensor = body.createFixture(sensorDef);
+        groundSensor.setUserData("player_foot_sensor");
         
         sensorShape.dispose();
     }
     
     private void createWallSensors() {
         // Capteur pour le mur à droite
-        createWallSensor(width / 2 + 0.05f, 0, "right_wall_sensor");
-        
+        leftWallSensor = createWallSensor(-width / 2 - 0.05f, 0, "left_wall_sensor");
         // Capteur pour le mur à gauche
-        createWallSensor(-width / 2 - 0.05f, 0, "left_wall_sensor");
+        rightWallSensor = createWallSensor(width / 2 + 0.05f, 0, "right_wall_sensor");
     }
     
-    private void createWallSensor(float x, float y, String userData) {
+    private Fixture createWallSensor(float x, float y, String userData) {
         PolygonShape wallShape = new PolygonShape();
         wallShape.setAsBox(0.1f, height / 2 - 0.1f, new Vector2(x, y), 0);
         
@@ -172,20 +174,73 @@ public class Player extends Entity {
         wallSensor.setUserData(userData);
         
         wallShape.dispose();
+        return wallSensor;
+    }
+    
+    /**
+     * Charge les animations depuis l'atlas de textures.
+     */
+    private void loadAnimations() {
+        if (assetManager == null) {
+            Gdx.app.error("Player", "AssetManager not initialized, using placeholder animations");
+            createPlaceholderAnimations();
+            return;
+        }
+        
+        try {
+            String atlasPath = Constants.Assets.Atlases.PLAYER;
+            if (assetManager.isLoaded(atlasPath, TextureAtlas.class)) {
+                TextureAtlas atlas = assetManager.get(atlasPath, TextureAtlas.class);
+                
+                // Charger les animations depuis l'atlas
+                idleAnimation = new Animation<>(1f / ANIMATION_FPS, atlas.findRegions("idle"));
+                walkAnimation = new Animation<>(1f / ANIMATION_FPS, atlas.findRegions("walk"));
+                runAnimation = new Animation<>(1f / ANIMATION_FPS, atlas.findRegions("run"));
+                jumpAnimation = new Animation<>(1f / ANIMATION_FPS, atlas.findRegions("jump"));
+                fallAnimation = new Animation<>(1f / ANIMATION_FPS, atlas.findRegions("fall"));
+                wallSlideAnimation = new Animation<>(1f / ANIMATION_FPS, atlas.findRegions("wall_slide"));
+                dashAnimation = new Animation<>(1f / ANIMATION_FPS, atlas.findRegions("dash"));
+                
+                currentAnimation = idleAnimation;
+            } else {
+                Gdx.app.warn("Player", "Player atlas not loaded, using placeholder animations");
+                createPlaceholderAnimations();
+            }
+        } catch (Exception e) {
+            Gdx.app.error("Player", "Error loading animations", e);
+            createPlaceholderAnimations();
+        }
+    }
+    
+    /**
+     * Crée des animations de placeholder si les vraies animations ne sont pas disponibles.
+     */
+    private void createPlaceholderAnimations() {
+        // Créer une texture de placeholder simple
+        TextureRegion placeholder = new TextureRegion();
+        idleAnimation = new Animation<>(1f, placeholder);
+        walkAnimation = new Animation<>(1f, placeholder);
+        runAnimation = new Animation<>(1f, placeholder);
+        jumpAnimation = new Animation<>(1f, placeholder);
+        fallAnimation = new Animation<>(1f, placeholder);
+        wallSlideAnimation = new Animation<>(1f, placeholder);
+        dashAnimation = new Animation<>(1f, placeholder);
+        currentAnimation = idleAnimation;
     }
     
     @Override
     public void update(float deltaTime) {
-        if (isDead) return;
+        if (isDead || body == null) return;
         
-        // Mettre à jour la position à partir du corps physique
-        position.set(body.getPosition());
+        super.update(deltaTime);
         
         // Gérer l'invincibilité
         updateInvincibility(deltaTime);
         
         // Gérer les entrées utilisateur
-        handleInput(deltaTime);
+        if (inputManager != null) {
+            handleInput(deltaTime);
+        }
         
         // Appliquer la physique personnalisée
         applyPhysics(deltaTime);
@@ -195,55 +250,67 @@ public class Player extends Entity {
         
         // Mettre à jour les états
         updateState(deltaTime);
+        
+        // Détecter le sol via les contacts
+        updateGroundDetection();
+    }
+    
+    /**
+     * Met à jour la détection du sol via les contacts Box2D.
+     */
+    private void updateGroundDetection() {
+        isOnGround = false;
+        
+        if (groundSensor != null) {
+            for (Contact contact : world.getContactList()) {
+                if (!contact.isTouching()) continue;
+                
+                Fixture fixtureA = contact.getFixtureA();
+                Fixture fixtureB = contact.getFixtureB();
+                
+                if ((fixtureA == groundSensor || fixtureB == groundSensor)) {
+                    isOnGround = true;
+                    break;
+                }
+            }
+        }
     }
     
     private void handleInput(float deltaTime) {
+        if (inputManager == null) return;
+        
         // Réinitialiser l'état de glissade sur les murs
         isWallSliding = false;
         
-        // Détecter si le joueur est contre un mur
-        boolean touchingLeftWall = isTouchingLeftWall();
-        boolean touchingRightWall = isTouchingRightWall();
-        
         // Gestion du mouvement horizontal
-        float moveInput = 0;
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) {
-            moveInput = 1f;
-            if (!facingRight) {
-                facingRight = true;
-                // Jouer un son de changement de direction
-                soundManager.playSound("turn", 0.2f);
-            }
-        } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)) {
-            moveInput = -1f;
-            if (facingRight) {
-                facingRight = false;
-                // Jouer un son de changement de direction
-                soundManager.playSound("turn", 0.2f);
-            }
+        float moveInput = inputManager.getHorizontalAxis();
+        boolean isRunning = inputManager.isRunPressed();
+        
+        // Mettre à jour la direction
+        if (moveInput > 0 && !facingRight) {
+            facingRight = true;
+        } else if (moveInput < 0 && facingRight) {
+            facingRight = false;
         }
         
         // Appliquer une force de mouvement
-        if (!isDashing) {
-            float targetVelocity = moveInput * MAX_SPEED;
+        if (!isDashing && moveInput != 0) {
+            float targetSpeed = isRunning ? MAX_SPEED : WALK_SPEED;
+            float targetVelocity = moveInput * targetSpeed;
             float velocityDiff = targetVelocity - body.getLinearVelocity().x;
-            float force = body.getMass() * velocityDiff / (1f/60f); // deltaTime approximatif
+            float force = body.getMass() * velocityDiff / (deltaTime > 0 ? deltaTime : 1f/60f);
             body.applyForceToCenter(force, 0, true);
         }
         
         // Gestion du saut
-        boolean jumpPressed = Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || 
-                            Gdx.input.isKeyJustPressed(Input.Keys.UP) || 
-                            Gdx.input.isKeyJustPressed(Input.Keys.W);
-        
-        if (jumpPressed) {
+        if (inputManager.isJumpJustPressed()) {
             jumpBufferTime = JUMP_BUFFER_TIME;
         } else if (jumpBufferTime > 0) {
             jumpBufferTime -= deltaTime;
         }
         
         // Gestion du dash
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT) && canDash) {
+        if (inputManager.isRunPressed() && canDash && !isDashing) {
             startDash();
         }
         
@@ -252,7 +319,7 @@ public class Player extends Entity {
             updateDash(deltaTime);
         }
         
-        // Gestion du saut depuis un mur
+        // Gestion du saut depuis un mur ou le sol
         if (jumpBufferTime > 0 && (isOnGround || coyoteTime > 0 || isWallSliding)) {
             jump();
             jumpBufferTime = 0;
@@ -269,7 +336,8 @@ public class Player extends Entity {
     private void applyPhysics(float deltaTime) {
         // Limiter la vitesse horizontale
         Vector2 velocity = body.getLinearVelocity();
-        velocity.x = MathUtils.clamp(velocity.x, -MAX_SPEED, MAX_SPEED);
+        float maxSpeed = isDashing ? MAX_SPEED * 1.5f : MAX_SPEED;
+        velocity.x = MathUtils.clamp(velocity.x, -maxSpeed, maxSpeed);
         body.setLinearVelocity(velocity);
         
         // Mise à jour du temps de coyote
@@ -309,7 +377,9 @@ public class Player extends Entity {
             // Saut normal
             body.setLinearVelocity(body.getLinearVelocity().x, 0);
             body.applyLinearImpulse(new Vector2(0, JUMP_FORCE), body.getWorldCenter(), true);
-            soundManager.playSound("jump", 0.5f);
+            if (audioManager != null) {
+                audioManager.playSound(Constants.Assets.Sounds.JUMP, 0.5f);
+            }
             isOnGround = false;
             coyoteTime = 0;
         } else if (isWallSliding) {
@@ -321,7 +391,9 @@ public class Player extends Entity {
                 body.getWorldCenter(), 
                 true
             );
-            soundManager.playSound("jump", 0.5f);
+            if (audioManager != null) {
+                audioManager.playSound(Constants.Assets.Sounds.JUMP, 0.5f);
+            }
             isWallSliding = false;
         }
     }
@@ -343,12 +415,8 @@ public class Player extends Entity {
             true
         );
         
-        // Jouer un son de dash
-        soundManager.playSound("dash", 0.7f);
-        
-        // Créer un effet visuel de dash
-        if (gameWorld != null) {
-            // gameWorld.createDashEffect(position.x, position.y, facingRight);
+        if (audioManager != null) {
+            audioManager.playSound(Constants.Assets.Sounds.POWERUP, 0.7f);
         }
     }
     
@@ -386,7 +454,6 @@ public class Player extends Entity {
     
     private void updateState(float deltaTime) {
         previousState = state;
-        stateTime += deltaTime;
         
         // Mettre à jour l'état en fonction de la vitesse et des entrées
         Vector2 velocity = body.getLinearVelocity();
@@ -402,7 +469,7 @@ public class Player extends Entity {
                 state = PlayerState.FALLING;
             }
         } else if (Math.abs(velocity.x) > 0.1f) {
-            state = PlayerState.RUNNING;
+            state = inputManager != null && inputManager.isRunPressed() ? PlayerState.RUNNING : PlayerState.WALKING;
         } else {
             state = PlayerState.IDLE;
         }
@@ -419,6 +486,9 @@ public class Player extends Entity {
             case IDLE:
                 currentAnimation = idleAnimation;
                 break;
+            case WALKING:
+                currentAnimation = walkAnimation;
+                break;
             case RUNNING:
                 currentAnimation = runAnimation;
                 break;
@@ -434,67 +504,86 @@ public class Player extends Entity {
             case DASHING:
                 currentAnimation = dashAnimation;
                 break;
+            default:
+                currentAnimation = idleAnimation;
+                break;
         }
     }
     
     @Override
     public void render(SpriteBatch batch) {
-        if (isDead || isBlinking) return;
+        if (isDead || (isBlinking && currentAnimation == null)) return;
+        
+        if (currentAnimation == null) {
+            return;
+        }
         
         // Récupérer la frame d'animation actuelle
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
         
+        if (currentFrame == null) return;
+        
         // Dessiner le joueur
-        float drawX = position.x - width / 2;
-        float drawY = position.y - height / 2;
+        float drawX = (position.x - width / 2) * Constants.WorldConfig.PPM;
+        float drawY = (position.y - height / 2) * Constants.WorldConfig.PPM;
+        float drawWidth = width * Constants.WorldConfig.PPM;
+        float drawHeight = height * Constants.WorldConfig.PPM;
         
         // Inverser le sprite si nécessaire
-        if (!facingRight && !currentFrame.isFlipX()) {
-            currentFrame.flip(true, false);
-        } else if (facingRight && currentFrame.isFlipX()) {
+        boolean flipX = !facingRight;
+        if (flipX != currentFrame.isFlipX()) {
             currentFrame.flip(true, false);
         }
         
         // Dessiner le sprite
-        batch.draw(currentFrame, drawX, drawY, width, height);
+        batch.draw(currentFrame, drawX, drawY, drawWidth, drawHeight);
     }
     
-    // Méthodes utilitaires
+    // Méthodes utilitaires pour la détection des murs
     
     public boolean isTouchingLeftWall() {
+        if (leftWallSensor == null) return false;
+        
         for (Contact contact : world.getContactList()) {
-            if (contact.isTouching() && 
-                (contact.getFixtureA().getUserData() == "left_wall_sensor" || 
-                 contact.getFixtureB().getUserData() == "left_wall_sensor")) {
-                return true;
+            if (contact.isTouching()) {
+                Fixture fixtureA = contact.getFixtureA();
+                Fixture fixtureB = contact.getFixtureB();
+                if ((fixtureA == leftWallSensor || fixtureB == leftWallSensor)) {
+                    return true;
+                }
             }
         }
         return false;
     }
     
     public boolean isTouchingRightWall() {
+        if (rightWallSensor == null) return false;
+        
         for (Contact contact : world.getContactList()) {
-            if (contact.isTouching() && 
-                (contact.getFixtureA().getUserData() == "right_wall_sensor" || 
-                 contact.getFixtureB().getUserData() == "right_wall_sensor")) {
-                return true;
+            if (contact.isTouching()) {
+                Fixture fixtureA = contact.getFixtureA();
+                Fixture fixtureB = contact.getFixtureB();
+                if ((fixtureA == rightWallSensor || fixtureB == rightWallSensor)) {
+                    return true;
+                }
             }
         }
         return false;
     }
     
     public void takeDamage() {
-        if (isInvincible) return;
+        if (isInvincible || isDead) return;
         
         if (hasPowerUp) {
             // Perdre le power-up au lieu d'une vie
             hasPowerUp = false;
-            // gameWorld.createPowerDownEffect(position.x, position.y);
-            soundManager.playSound("powerdown", 0.7f);
+            if (audioManager != null) {
+                audioManager.playSound(Constants.Assets.Sounds.POWERUP, 0.7f);
+            }
             
             // Rendre invincible brièvement
             isInvincible = true;
-            invincibleTimer = 2f;
+            invincibleTimer = Constants.PlayerConfig.INVINCIBILITY_DURATION;
         } else {
             // Perdre une vie
             lives--;
@@ -504,8 +593,10 @@ public class Player extends Entity {
             } else {
                 // Rendre invincible brièvement
                 isInvincible = true;
-                invincibleTimer = 2f;
-                soundManager.playSound("hurt", 0.7f);
+                invincibleTimer = Constants.PlayerConfig.INVINCIBILITY_DURATION;
+                if (audioManager != null) {
+                    audioManager.playSound(Constants.Assets.Sounds.HURT, 0.7f);
+                }
                 
                 // Repousser le joueur
                 float direction = facingRight ? -1 : 1;
@@ -518,39 +609,52 @@ public class Player extends Entity {
         if (isDead) return;
         
         isDead = true;
-        soundManager.playSound("death", 1f);
+        if (audioManager != null) {
+            audioManager.playSound(Constants.Assets.Sounds.HURT, 1f);
+        }
         
         // Désactiver les collisions
-        body.setActive(false);
-        
-        // Animation de mort
-        // gameWorld.createDeathEffect(position.x, position.y);
-        
-        // Gérer le game over
-        if (gameWorld != null) {
-            // gameWorld.onPlayerDeath();
+        if (body != null) {
+            body.setActive(false);
         }
     }
     
     public void collectCoin() {
         coins++;
         score += 100;
-        soundManager.playSound("coin", 0.3f);
+        if (audioManager != null) {
+            audioManager.playSound(Constants.Assets.Sounds.COIN, 0.3f);
+        }
         
         // Vérifier les vies supplémentaires
         if (coins % 100 == 0) {
             lives++;
-            soundManager.playSound("1up", 0.7f);
+            if (audioManager != null) {
+                audioManager.playSound(Constants.Assets.Sounds.POWERUP, 0.7f);
+            }
         }
     }
     
     public void collectPowerUp() {
         hasPowerUp = true;
-        soundManager.playSound("powerup", 0.7f);
-        // gameWorld.createPowerUpEffect(position.x, position.y);
+        if (audioManager != null) {
+            audioManager.playSound(Constants.Assets.Sounds.POWERUP, 0.7f);
+        }
     }
     
     // Getters et setters
+    
+    public PlayerState getState() {
+        return state;
+    }
+    
+    public boolean isFacingRight() {
+        return facingRight;
+    }
+    
+    public void setFacingRight(boolean facingRight) {
+        this.facingRight = facingRight;
+    }
     
     public int getLives() {
         return lives;
@@ -582,11 +686,12 @@ public class Player extends Entity {
     
     public void setGameWorld(GameWorld gameWorld) {
         this.gameWorld = gameWorld;
+        setWorld(gameWorld);
     }
     
     @Override
     public void dispose() {
-        // Libérer les ressources du joueur
-        // (les textures sont gérées par l'AssetManager)
+        // Les textures sont gérées par l'AssetManager
+        super.dispose();
     }
 }
