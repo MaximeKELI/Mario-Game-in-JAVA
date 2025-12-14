@@ -16,6 +16,9 @@ public enum ScreenType {
     /** Écran de pause */
     PAUSE,
     
+    /** Transition entre niveaux */
+    LEVEL_TRANSITION,
+    
     /** Écran de fin de partie */
     GAME_OVER,
     

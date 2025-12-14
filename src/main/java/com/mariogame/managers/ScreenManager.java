@@ -34,15 +34,18 @@ public class ScreenManager implements Disposable {
     }
     
     private void initScreens() {
-        // Création des écrans (ils seront initialisés au premier accès)
+        // Création des écrans disponibles (lazy initialization pour les autres)
         screens.put(ScreenType.LOADING, new LoadingScreen(game));
         screens.put(ScreenType.MENU, new MenuScreen(game));
         screens.put(ScreenType.GAME, new GameScreen(game));
         screens.put(ScreenType.PAUSE, new PauseScreen(game));
-        screens.put(ScreenType.GAME_OVER, new GameOverScreen(game));
-        screens.put(ScreenType.OPTIONS, new OptionsScreen(game));
-        screens.put(ScreenType.LEVEL_SELECT, new LevelSelectScreen(game));
-        screens.put(ScreenType.CREDITS, new CreditsScreen(game));
+        screens.put(ScreenType.LEVEL_TRANSITION, new LevelTransitionScreen(game));
+        
+        // Les autres écrans seront créés à la demande si nécessaire
+        // screens.put(ScreenType.GAME_OVER, new GameOverScreen(game));
+        // screens.put(ScreenType.OPTIONS, new OptionsScreen(game));
+        // screens.put(ScreenType.LEVEL_SELECT, new LevelSelectScreen(game));
+        // screens.put(ScreenType.CREDITS, new CreditsScreen(game));
     }
     
     /**

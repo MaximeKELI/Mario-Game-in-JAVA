@@ -66,15 +66,14 @@ public class GameWorld implements Disposable {
             mapLoader.loadCollisionLayers();
             
             // Créer le joueur à la position de départ
-            Vector2 startPosition = mapLoader.getPlayerStartPosition();
+            Vector2 startPosition = mapLoader != null ? mapLoader.getPlayerStartPosition() : null;
             if (startPosition != null) {
                 player = new Player(physicsWorld, startPosition.x, startPosition.y);
-                addEntity(player);
             } else {
-                Gdx.app.error("GameWorld", "No player start position found in the map!");
+                Gdx.app.warn("GameWorld", "No player start position found in the map, using default!");
                 player = new Player(physicsWorld, 2, 10); // Position par défaut
-                addEntity(player);
             }
+            addEntity(player);
             
             // Charger les entités du niveau
             loadEntities();
@@ -257,7 +256,22 @@ public class GameWorld implements Disposable {
     public void addEntity(Entity entity) {
         if (entity != null) {
             entity.setWorld(this);
+            if (entity instanceof Player) {
+                // Initialiser le joueur avec les managers si nécessaire
+                // Cette initialisation sera faite depuis GameScreen
+            }
             entitiesToAdd.add(entity);
+        }
+    }
+    
+    /**
+     * Initialise le joueur avec les managers nécessaires.
+     */
+    public void initializePlayer(com.mariogame.managers.InputManager inputManager, 
+                                  com.mariogame.managers.AudioManager audioManager,
+                                  com.badlogic.gdx.assets.AssetManager assetManager) {
+        if (player != null) {
+            player.initialize(inputManager, audioManager, assetManager);
         }
     }
     

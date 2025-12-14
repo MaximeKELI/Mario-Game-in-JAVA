@@ -5,10 +5,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.mariogame.managers.*;
+import com.mariogame.config.GameConfig;
+import com.mariogame.core.AssetLoader;
+import com.mariogame.managers.AudioManager;
+import com.mariogame.managers.InputManager;
+import com.mariogame.managers.SaveManager;
+import com.mariogame.managers.ScreenManager;
 import com.mariogame.screens.ScreenType;
-import com.mariogame.screens.ScreenManager;
-import com.mariogame.utils.Constants;
 
 /**
  * Classe principale du jeu Mario.
@@ -82,8 +85,15 @@ public class MarioGame extends Game {
     
     @Override
     public void render() {
+        // Mettre à jour l'input manager
+        if (inputManager != null) {
+            inputManager.update();
+        }
+        
         // Délégation du rendu au gestionnaire d'écrans
-        screenManager.render(Gdx.graphics.getDeltaTime());
+        if (screenManager != null) {
+            screenManager.render(Gdx.graphics.getDeltaTime());
+        }
     }
     
     @Override
