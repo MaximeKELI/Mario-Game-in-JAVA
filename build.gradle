@@ -46,10 +46,10 @@ project(":desktop") {
     sourceSets {
         main {
             java {
-                srcDirs = ['src/main/java', '../src/main/java']
+                srcDirs = ['src/main/java']
             }
             resources {
-                srcDirs = ['src/main/resources', '../assets']
+                srcDirs = ['src/main/resources']
             }
         }
     }
@@ -75,11 +75,21 @@ project(":core") {
     sourceSets {
         main {
             java {
-                srcDirs = ['src/main/java', '../src/main/java']
+                srcDirs = ['../src/main/java']
             }
             resources {
-                srcDirs = ['src/main/resources', '../assets']
+                srcDirs = ['../src/main/resources', '../src/main/java/com/mariogame/assets']
             }
+        }
+        test {
+            java {
+                srcDirs = ['../src/test/java']
+            }
+            resources {
+                srcDirs = ['../src/test/resources']
+            }
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
         }
     }
     
@@ -100,27 +110,6 @@ project(":core") {
         useJUnit()
         testLogging {
             events "passed", "skipped", "failed"
-        }
-    }
-    
-    sourceSets {
-        main {
-            java {
-                srcDirs = ['src/main/java', 'src/main']
-            }
-            resources {
-                srcDirs = ['src/main/resources']
-            }
-        }
-        test {
-            java {
-                srcDirs = ['src/test/java', 'src/test']
-            }
-            resources {
-                srcDirs = ['src/test/resources']
-            }
-            compileClasspath += sourceSets.main.output
-            runtimeClasspath += sourceSets.main.output
         }
     }
 }
